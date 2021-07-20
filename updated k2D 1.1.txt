@@ -1,0 +1,72 @@
+extends KinematicBody2D
+
+var motion = Vector2(0,0)
+var UP = Vector2(0,-1)
+const MOVEMENT = 300
+const GRAVITY = 20
+
+var facing_right = null
+
+
+#jumping
+const JUMPFORCE = -200
+const JUMPHIGHT = -700
+var jumptime = 0
+var deltajmod = 0.2
+var jumpmod = 2
+var canjump = true
+var jumping = false
+
+#animations
+onready var anPlayer = $AnimationPlayer
+
+func _physics_process(delta):
+	
+	# JUMPING AND GRAVITY
+			# Gravity
+	motion.y += GRAVITY
+	
+			# Jumping (main)
+	if Input.is_action_pressed("jump"):
+		if canjump: #determines if jump is possible
+			jumping = true 
+			jumptime += (delta + deltajmod) * jumpmod #ALL JUMPING MODS ARE HERE
+			motion.y = JUMPFORCE * jumptime
+			if motion.y < JUMPHIGHT: #max jumping hight
+				canjump = false
+	elif motion.y < 0: #determines if falling
+		jumptime = 0 # keep this, makes sure that momentum can't carry over between jumps (or do if we want to implement bouncing for hight)
+		canjump = false
+		
+			#jumping animations
+	if jumping and facing_right:
+		anPlayer.play("Jump")
+	elif jumping and not facing_right:
+		anPlayer.play("Left_Jump")
+		
+			# floor reset for jumping
+	if is_on_floor(): #determines if on floor
+		jumptime = 0 # this is a catch for earlier just incase the value doesn't reset.
+		jumping = false
+		canjump = true
+
+	# Movement
+	if Input.is_action_pressed("right"):
+		facing_right = true
+		motion.x = MOVEMENT 
+		if facing_right and not jumping:
+			anPlayer.play("Walk")
+	elif Input.is_action_pressed("left"): 
+		motion.x = -MOVEMENT
+		facing_right = false
+		if not facing_right and not jumping:
+			anPlayer.play("Left_Walk")
+	else: 
+		motion.x = 0
+		if not jumping and facing_right:
+			anPlayer.play("stand")
+		if not jumping and not facing_right:
+			anPlayer.play("Left_Stand")
+	
+	move_and_slide(motion,UP)
+	
